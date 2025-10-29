@@ -39,7 +39,7 @@ ENV/
 # Data files
 *.db
 *.duckdb
-data/
+/data/
 *.csv
 *.parquet
 
