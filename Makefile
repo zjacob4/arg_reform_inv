@@ -6,7 +6,7 @@ install:
 
 # Run the Streamlit application
 run:
-	streamlit run src/app/dashboard.py
+	python -m streamlit run src/app/dashboard.py
 
 # Run tests
 test:

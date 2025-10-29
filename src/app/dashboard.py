@@ -2,20 +2,23 @@
 
 import streamlit as st
 from datetime import datetime, timedelta
-import duckdb
+from typing import TYPE_CHECKING
 
-from ..data.db import connect
-from ..features.fx_gap import compute as compute_fx_gap
-from ..features.reserves_momentum import compute as compute_reserves_momentum
-from ..features.cpi_corridors import compute as compute_cpi_corridor, corridor
-from ..features.embi_bands import compute as compute_embi_bands
-from ..triggers.gates import evaluate_states
-from ..models.sharpe_engine import FXState
+if TYPE_CHECKING:
+    import duckdb
+
+from src.data.db import connect
+from src.features.fx_gap import compute as compute_fx_gap
+from src.features.reserves_momentum import compute as compute_reserves_momentum
+from src.features.cpi_corridors import compute as compute_cpi_corridor, corridor
+from src.features.embi_bands import compute as compute_embi_bands
+from src.triggers.gates import evaluate_states
+from src.models.sharpe_engine import FXState
 import subprocess
 import sys
 
 
-def get_latest_embi_and_trend(conn: duckdb.DuckDBPyConnection) -> tuple[float, float]:
+def get_latest_embi_and_trend(conn: "duckdb.DuckDBPyConnection") -> tuple[float, float]:
     """Get latest EMBI level and 30-day trend.
     
     Returns:
@@ -57,7 +60,7 @@ def get_latest_embi_and_trend(conn: duckdb.DuckDBPyConnection) -> tuple[float, f
     return latest_value, trend
 
 
-def get_latest_core_cpi_3m_ann(conn: duckdb.DuckDBPyConnection) -> tuple[float, dict] | tuple[None, None]:
+def get_latest_core_cpi_3m_ann(conn: "duckdb.DuckDBPyConnection") -> tuple[float, dict] | tuple[None, None]:
     """Get latest core CPI and 3-month annualized rate.
     
     Returns:
