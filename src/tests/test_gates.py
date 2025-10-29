@@ -179,16 +179,20 @@ class TestEvaluateStatesIntegration:
     
     def test_red_state_full(self):
         """Test full evaluation with RED state."""
+        # Use expected return below risk-free rate and high volatility to get negative Sharpe
         result = evaluate_states(
             fx_gap=0.40,           # RED
             reserves_mom_4w=-0.03, # RED
             core_cpi_3m_ann=0.50,  # RED
             embi_level=1800,       # RED
-            embi_trend_30d=200     # RED
+            embi_trend_30d=200,    # RED
+            exp_return=0.04,       # Return below rf (0.045) for negative Sharpe
+            vol=0.25               # High volatility
         )
         
         assert result["overall_state"] == FXState.RED
         assert "RED" in result["action_note"]
+        # With negative Sharpe (return < rf), position should be < 0.5
         assert result["macro_weight"] < 0.5  # Should recommend low position
     
     def test_state_flip_from_green_to_yellow(self):
