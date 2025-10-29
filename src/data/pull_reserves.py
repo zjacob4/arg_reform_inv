@@ -4,41 +4,30 @@ from datetime import datetime, timedelta
 from typing import List, Tuple
 
 from .db import connect, upsert_timeseries
+from .provider_router import fetch_series
+from .providers.base import ProviderError
 
 
 def pull_reserves_usd() -> List[Tuple[datetime, float]]:
     """Pull USD reserves data.
     
-    For now, generates synthetic weekly data.
-    TODO: Replace with actual API call to BCRA or other data source.
+    Tries provider router first, raises error if all providers fail.
     
     Returns:
         List of (datetime, value) tuples
-    """
-    # Placeholder: generate weekly data for last 12 weeks
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    weeks = 12
-    base_reserves = 21000.0  # Base value in USD millions
-    
-    # Generate weekly data (Fridays)
-    rows = []
-    for i in range(weeks, 0, -1):
-        # Get Friday of that week
-        days_back = (i - 1) * 7
-        date = today - timedelta(days=days_back)
-        # Adjust to Friday (weekday 4)
-        weekday = date.weekday()
-        days_to_friday = (4 - weekday) % 7
-        if days_to_friday > 0:
-            date = date - timedelta(days=7 - days_to_friday)
-        else:
-            date = date - timedelta(days=days_to_friday)
         
-        # Synthetic value with some variation
-        value = base_reserves + (weeks - i) * 50.0 + (i % 3) * 20.0
-        rows.append((date, value))
-    
-    return rows
+    Raises:
+        ProviderError: If all providers fail to fetch data
+    """
+    try:
+        # Try provider router first
+        rows = fetch_series("RESERVES_USD", start="2020-01-01")
+        if rows:
+            return rows
+        else:
+            raise ProviderError("All providers returned empty data for RESERVES_USD")
+    except ProviderError as e:
+        raise ProviderError(f"Failed to fetch RESERVES_USD data: {e}")
 
 
 def main():

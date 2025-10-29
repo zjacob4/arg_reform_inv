@@ -4,63 +4,59 @@ from datetime import datetime
 from typing import List, Tuple
 
 from .db import connect, upsert_timeseries
+from .provider_router import fetch_series
+from .providers.base import ProviderError
 
 
 def pull_cpi_headline() -> List[Tuple[datetime, float]]:
     """Pull headline CPI data.
     
-    For now, generates synthetic monthly data.
-    TODO: Replace with actual API call to INDEC or other data source.
+    Tries provider router first, raises error if all providers fail.
     
     Returns:
         List of (datetime, value) tuples
-    """
-    # Placeholder: generate monthly data for last 24 months
-    today = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    months = 24
-    base_index = 100.0
-    
-    rows = []
-    for i in range(months, 0, -1):
-        # Get first day of each month
-        if i == months:
-            date = today.replace(day=1)
-        else:
-            # Go back i months
-            year = today.year
-            month = today.month - i
-            while month <= 0:
-                month += 12
-                year -= 1
-            date = datetime(year, month, 1)
         
-        # Synthetic value with monthly inflation
-        monthly_inflation = 0.08  # 8% monthly placeholder
-        value = base_index * ((1 + monthly_inflation) ** (months - i))
-        rows.append((date, value))
-    
-    return rows
+    Raises:
+        ProviderError: If all providers fail to fetch data
+    """
+    try:
+        # Try provider router first
+        rows = fetch_series("CPI_HEADLINE", start="2019-01-01")
+        if rows:
+            return rows
+        else:
+            raise ProviderError("All providers returned empty data for CPI_HEADLINE")
+    except ProviderError as e:
+        raise ProviderError(f"Failed to fetch CPI_HEADLINE data: {e}")
 
 
 def pull_cpi_core() -> List[Tuple[datetime, float]]:
     """Pull core CPI data.
     
-    For now, generates synthetic monthly data.
-    TODO: Replace with actual API call to INDEC or other data source.
+    Tries provider router first, falls back to computed data from headline.
     
     Returns:
         List of (datetime, value) tuples
+        
+    Raises:
+        ProviderError: If all providers fail to fetch data and headline data unavailable
     """
-    # Similar to headline but slightly different trend
-    headline_rows = pull_cpi_headline()
-    
-    # Core CPI typically increases slightly slower than headline
-    rows = [
-        (ts, value * 0.995)  # Core slightly lower/less volatile
-        for ts, value in headline_rows
-    ]
-    
-    return rows
+    try:
+        # Try provider router first
+        rows = fetch_series("CPI_CORE", start="2019-01-01")
+        if rows:
+            return rows
+        else:
+            # Try to compute from headline data
+            headline_rows = pull_cpi_headline()
+            # Core CPI typically increases slightly slower than headline
+            rows = [
+                (ts, value * 0.995)  # Core slightly lower/less volatile
+                for ts, value in headline_rows
+            ]
+            return rows
+    except ProviderError as e:
+        raise ProviderError(f"Failed to fetch CPI_CORE data: {e}")
 
 
 def main():

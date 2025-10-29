@@ -4,51 +4,52 @@ from datetime import datetime, timedelta
 from typing import List, Tuple
 
 from .db import connect, upsert_timeseries
+from .provider_router import fetch_series
+from .providers.base import ProviderError
 
 
 def pull_usdars_official() -> List[Tuple[datetime, float]]:
     """Pull official USD/ARS exchange rate.
     
-    For now, uses a placeholder with recent dates and static rate.
-    TODO: Replace with actual API call to BCRA or other data source.
+    Tries provider router first, raises error if all providers fail.
     
     Returns:
         List of (datetime, value) tuples
+        
+    Raises:
+        ProviderError: If all providers fail to fetch data
     """
-    # Placeholder: generate last 30 days with a static rate
-    # In production, this would call BCRA API or similar
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    days = 30
-    rate = 850.0  # Placeholder rate
-    
-    rows = [
-        (today - timedelta(days=i), rate + (i * 0.5))  # Slight variation
-        for i in range(days, 0, -1)
-    ]
-    return rows
+    try:
+        # Try provider router first
+        rows = fetch_series("USDARS_OFFICIAL", start="2020-01-01")
+        if rows:
+            return rows
+        else:
+            raise ProviderError("All providers returned empty data for USDARS_OFFICIAL")
+    except ProviderError as e:
+        raise ProviderError(f"Failed to fetch USDARS_OFFICIAL data: {e}")
 
 
 def pull_usdars_parallel() -> List[Tuple[datetime, float]]:
     """Pull parallel (blue) USD/ARS exchange rate.
     
-    For now, generates placeholder data with a gap above official rate.
-    TODO: Replace with actual data source (e.g., Ambito Financiero, DolarHoy).
+    Tries provider router first, raises error if all providers fail.
     
     Returns:
         List of (datetime, value) tuples
+        
+    Raises:
+        ProviderError: If all providers fail to fetch data
     """
-    # Placeholder: generate parallel rate with ~20% gap above official
-    today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    days = 30
-    base_official = 850.0
-    gap_ratio = 1.20  # 20% gap
-    parallel_rate = base_official * gap_ratio
-    
-    rows = [
-        (today - timedelta(days=i), parallel_rate + (i * 0.6))  # Slightly higher variation
-        for i in range(days, 0, -1)
-    ]
-    return rows
+    try:
+        # Try provider router first
+        rows = fetch_series("USDARS_PARALLEL", start="2020-01-01")
+        if rows:
+            return rows
+        else:
+            raise ProviderError("All providers returned empty data for USDARS_PARALLEL")
+    except ProviderError as e:
+        raise ProviderError(f"Failed to fetch USDARS_PARALLEL data: {e}")
 
 
 def main():
