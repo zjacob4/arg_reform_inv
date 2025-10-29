@@ -41,7 +41,13 @@ Overall state is GREEN when all conditions are met simultaneously; YELLOW when m
 
 ### Setup
 
-1. Install dependencies:
+1. Create conda environment:
+   ```bash
+   conda env create -f environment.yml
+   conda activate arg-reform-inv
+   ```
+
+   Or install dependencies directly:
    ```bash
    make install
    ```
