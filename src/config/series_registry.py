@@ -1,0 +1,98 @@
+"""Series registry for economic and financial indicators."""
+
+from dataclasses import dataclass
+from typing import Dict, List, Optional
+
+
+@dataclass
+class SeriesSpec:
+    """Specification for a data series."""
+    
+    name: str
+    code: str
+    freq: str  # e.g., 'D' for daily, 'M' for monthly
+    source: str  # Data source/provider name
+    units: str  # Unit of measurement
+
+
+# Registry of all available data series
+REGISTRY: Dict[str, SeriesSpec] = {
+    "USDARS_OFFICIAL": SeriesSpec(
+        name="USDARS_OFFICIAL",
+        code="USDARS_OFFICIAL",
+        freq="D",
+        source="BCRA",
+        units="ARS per USD",
+    ),
+    "USDARS_PARALLEL": SeriesSpec(
+        name="USDARS_PARALLEL",
+        code="USDARS_PARALLEL",
+        freq="D",
+        source="MOCK",
+        units="ARS per USD",
+    ),
+    "RESERVES_USD": SeriesSpec(
+        name="RESERVES_USD",
+        code="RESERVES_USD",
+        freq="D",
+        source="BCRA",
+        units="USD millions",
+    ),
+    "CPI_HEADLINE": SeriesSpec(
+        name="CPI_HEADLINE",
+        code="CPI_HEADLINE",
+        freq="M",
+        source="INDEC",
+        units="Index",
+    ),
+    "CPI_CORE": SeriesSpec(
+        name="CPI_CORE",
+        code="CPI_CORE",
+        freq="M",
+        source="INDEC",
+        units="Index",
+    ),
+    "EMBI_AR": SeriesSpec(
+        name="EMBI_AR",
+        code="EMBI_AR",
+        freq="D",
+        source="Bloomberg",
+        units="Basis points",
+    ),
+    "CDS_5Y": SeriesSpec(
+        name="CDS_5Y",
+        code="CDS_5Y",
+        freq="D",
+        source="Bloomberg",
+        units="Basis points",
+    ),
+    "PRIMARY_BALANCE": SeriesSpec(
+        name="PRIMARY_BALANCE",
+        code="PRIMARY_BALANCE",
+        freq="M",
+        source="MECON",
+        units="ARS billions",
+    ),
+}
+
+
+def get_series_spec(name: str) -> Optional[SeriesSpec]:
+    """Get series specification by name.
+    
+    Args:
+        name: Series name/identifier
+        
+    Returns:
+        SeriesSpec if found, None otherwise
+    """
+    return REGISTRY.get(name)
+
+
+def list_all_series() -> List[str]:
+    """List all registered series names.
+    
+    Returns:
+        List of series names
+    """
+    return sorted(REGISTRY.keys())
+
