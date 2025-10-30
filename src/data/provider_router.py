@@ -7,13 +7,18 @@ from datetime import datetime
 from .providers.bcra import BCRAProvider
 from .providers.indec import INDECProvider
 from .providers.yahoo_fx import YahooFXProvider
+from .providers.bluelytics import BluelyticsProvider
 from .providers.base import ProviderError
+
+# Default provider order - prefer local official sources first
+DEFAULT_ORDER = "BCRA,INDEC,BLUELYTICS,YAHOOFX,IMF,TE"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
     "BCRA": BCRAProvider(),
     "INDEC": INDECProvider(),
     "YAHOOFX": YahooFXProvider(),
+    "BLUELYTICS": BluelyticsProvider(),
     # Keep IMF/TE available but de-prioritized if still present
     # "IMF": IMFProvider(),
     # "TE": TradingEconomicsProvider(),
@@ -42,11 +47,8 @@ def fetch_series(
     Raises:
         ProviderError: If all providers fail or series_code not found
     """
-    # Get preferred provider order from env, default to all available
-    preferred = os.getenv(
-        "PREFERRED_PROVIDERS",
-        "BCRA,INDEC,YAHOOFX,IMF,TE"
-    )
+    # Get preferred provider order from env, default to DEFAULT_ORDER
+    preferred = os.getenv("PREFERRED_PROVIDERS", DEFAULT_ORDER)
     provider_names = [p.strip() for p in preferred.split(",")]
     
     last_error = None

@@ -195,10 +195,20 @@ try:
     with col1:
         st.markdown("### 💱 FX")
         if fx_gap_result:
+            # Format source tags
+            official_source = "BCRA" if fx_gap_result.used_official == "USDARS_OFFICIAL" else "Bluelytics"
+            parallel_source = "Bluelytics"  # Both USDARS_PARALLEL and USDARS_BLUE come from Bluelytics
+            
             st.metric(
                 label="Official / Parallel",
                 value=f"${fx_gap_result.official_rate:.2f} / ${fx_gap_result.parallel_rate:.2f}" if fx_gap_result.parallel_rate else "N/A",
             )
+            
+            # Show source tags
+            st.caption(f"Official: {fx_gap_result.official_rate:.1f} ({official_source})")
+            if fx_gap_result.parallel_rate:
+                st.caption(f"Parallel: {fx_gap_result.parallel_rate:.1f} ({parallel_source})")
+            
             gap_pct = fx_gap_result.value * 100
             st.metric(
                 label="Gap",

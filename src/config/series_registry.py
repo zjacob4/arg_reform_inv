@@ -28,8 +28,8 @@ REGISTRY: Dict[str, SeriesSpec] = {
         name="USDARS_PARALLEL",
         code="USDARS_PARALLEL",
         freq="D",
-        source="MOCK",
-        units="ARS per USD",
+        source="BLUELYTICS",
+        units="ARS per USD (blue)",
     ),
     "RESERVES_USD": SeriesSpec(
         name="RESERVES_USD",
