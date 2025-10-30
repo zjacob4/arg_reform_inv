@@ -49,8 +49,30 @@ REGISTRY: Dict[str, SeriesSpec] = {
         name="CPI_CORE",
         code="CPI_CORE",
         freq="M",
-        source="IMF_CPI",
+        source="FRED",
         units="Index",
+    ),
+    # FRED-preferred CPI route (added alongside existing INDEC/IMF options)
+    "CPI_NATIONAL_INDEX": SeriesSpec(
+        name="CPI_NATIONAL_INDEX",
+        code="CPI_NATIONAL_INDEX",
+        freq="M",
+        source="FRED",
+        units="Index",
+    ),
+    "CPI_NATIONAL_YOY": SeriesSpec(
+        name="CPI_NATIONAL_YOY",
+        code="CPI_NATIONAL_YOY",
+        freq="M",
+        source="FRED",
+        units="Percent",
+    ),
+    "CPI_NATIONAL_MOM": SeriesSpec(
+        name="CPI_NATIONAL_MOM",
+        code="CPI_NATIONAL_MOM",
+        freq="M",
+        source="FRED",
+        units="Percent",
     ),
     "EMBI_AR": SeriesSpec(
         name="EMBI_AR",

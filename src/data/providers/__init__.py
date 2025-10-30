@@ -6,6 +6,7 @@ from .indec import INDECProvider
 from .yahoo_fx import YahooFXProvider
 from .bluelytics import BluelyticsProvider
 from .imf_cpi import IMFProviderCPI
+from .fred_cpi import FREDCPIProvider
 
 __all__ = [
     "SeriesProvider",
@@ -15,5 +16,6 @@ __all__ = [
     "YahooFXProvider",
     "BluelyticsProvider",
     "IMFProviderCPI",
+    "FREDCPIProvider",
 ]
 

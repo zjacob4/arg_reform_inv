@@ -1,4 +1,8 @@
-"""Pull CPI (Consumer Price Index) data."""
+"""Pull CPI (Consumer Price Index) data via preferred FRED CPI series.
+
+Canonical series stored:
+  - CPI_NATIONAL_INDEX (level)
+"""
 
 from datetime import datetime
 from typing import List, Tuple
@@ -6,93 +10,37 @@ from typing import List, Tuple
 from .db import connect, upsert_timeseries
 from .provider_router import fetch_series
 from .providers.base import ProviderError
-from src.data.provider_router import fetch_series
-from src.data.db import connect, upsert_timeseries
+
+
+def pull_cpi_index() -> List[Tuple[datetime, float]]:
+    """Fetch CPI index (level)."""
+    rows = fetch_series("CPI_NATIONAL_INDEX", start="2016-12-01")
+    if not rows:
+        raise ProviderError("All providers returned empty data for CPI_NATIONAL_INDEX")
+    return rows
+
+
+# YoY is temporarily disabled (can be computed later from index if needed)
+
+
+# MoM temporarily disabled (can be computed later from index)
 
 
 def refresh_cpi() -> None:
+    """Refresh CPI series into DuckDB."""
     conn = connect()
     try:
-        idx = fetch_series("CPI_NATIONAL_INDEX", start="2016-12-01")
-        yoy = fetch_series("CPI_NATIONAL_YOY", start="2017-12-01")
-        mom = fetch_series("CPI_NATIONAL_MOM", start="2017-01-01")
+        idx = pull_cpi_index()
         upsert_timeseries(conn, "CPI_NATIONAL_INDEX", idx)
-        upsert_timeseries(conn, "CPI_NATIONAL_YOY", yoy)
-        upsert_timeseries(conn, "CPI_NATIONAL_MOM", mom)
     finally:
         conn.close()
 
-def pull_cpi_headline() -> List[Tuple[datetime, float]]:
-    """Pull headline CPI data.
-    
-    Tries provider router first, raises error if all providers fail.
-    
-    Returns:
-        List of (datetime, value) tuples
-        
-    Raises:
-        ProviderError: If all providers fail to fetch data
-    """
-    try:
-        # Try provider router first
-        rows = fetch_series("CPI_HEADLINE", start="2019-01-01")
-        if rows:
-            return rows
-        else:
-            raise ProviderError("All providers returned empty data for CPI_HEADLINE")
-    except ProviderError as e:
-        raise ProviderError(f"Failed to fetch CPI_HEADLINE data: {e}")
-
-
-def pull_cpi_core() -> List[Tuple[datetime, float]]:
-    """Pull core CPI data.
-    
-    Tries provider router first, falls back to computed data from headline.
-    
-    Returns:
-        List of (datetime, value) tuples
-        
-    Raises:
-        ProviderError: If all providers fail to fetch data and headline data unavailable
-    """
-    try:
-        # Try provider router first
-        rows = fetch_series("CPI_CORE", start="2019-01-01")
-        if rows:
-            return rows
-        else:
-            # Try to compute from headline data
-            headline_rows = pull_cpi_headline()
-            # Core CPI typically increases slightly slower than headline
-            rows = [
-                (ts, value * 0.995)  # Core slightly lower/less volatile
-                for ts, value in headline_rows
-            ]
-            return rows
-    except ProviderError as e:
-        raise ProviderError(f"Failed to fetch CPI_CORE data: {e}")
-
 
 def main():
-    """Pull CPI data and write to DuckDB."""
     print("Pulling CPI data...")
-    
     try:
-        conn = connect()
-        
-        try:
-            # Pull headline CPI
-            headline_rows = pull_cpi_headline()
-            upsert_timeseries(conn, "CPI_HEADLINE", headline_rows)
-            print(f"  Upserted {len(headline_rows)} records for CPI_HEADLINE")
-            
-            # Pull core CPI
-            core_rows = pull_cpi_core()
-            upsert_timeseries(conn, "CPI_CORE", core_rows)
-            print(f"  Upserted {len(core_rows)} records for CPI_CORE")
-        finally:
-            conn.close()
-            
+        refresh_cpi()
+        print("  CPI refresh completed (INDEX)")
     except Exception as e:
         print(f"Error pulling CPI data: {e}")
         raise

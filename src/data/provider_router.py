@@ -9,10 +9,12 @@ from .providers.indec import INDECProvider
 from .providers.yahoo_fx import YahooFXProvider
 from .providers.bluelytics import BluelyticsProvider
 from .providers.imf_cpi import IMFProviderCPI
+from .providers.fred_cpi import FREDCPIProvider
 from .providers.base import ProviderError
 
 # Prefer INDEC via Time Series API (official + fastest), then IMF (stable)
-DEFAULT_ORDER = "BCRA,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI"
+# Prefer FRED for CPI (stable monthly), then INDEC, then IMF
+DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
@@ -27,6 +29,7 @@ PROVIDERS = {
 
 # Extend with CPI providers
 PROVIDERS.update({
+    "FRED_CPI": FREDCPIProvider(),
     "INDEC": INDECProvider(),
     "IMF_CPI": IMFProviderCPI(),
 })
