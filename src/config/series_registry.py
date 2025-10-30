@@ -42,14 +42,14 @@ REGISTRY: Dict[str, SeriesSpec] = {
         name="CPI_HEADLINE",
         code="CPI_HEADLINE",
         freq="M",
-        source="INDEC",
+        source="IMF_CPI",
         units="Index",
     ),
     "CPI_CORE": SeriesSpec(
         name="CPI_CORE",
         code="CPI_CORE",
         freq="M",
-        source="INDEC",
+        source="IMF_CPI",
         units="Index",
     ),
     "EMBI_AR": SeriesSpec(

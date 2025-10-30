@@ -8,10 +8,11 @@ from .providers.bcra import BCRAProvider
 from .providers.indec import INDECProvider
 from .providers.yahoo_fx import YahooFXProvider
 from .providers.bluelytics import BluelyticsProvider
+from .providers.imf_cpi import IMFProviderCPI
 from .providers.base import ProviderError
 
-# Default provider order - prefer local official sources first
-DEFAULT_ORDER = "BCRA,INDEC,BLUELYTICS,YAHOOFX,IMF,TE"
+# Prefer INDEC via Time Series API (official + fastest), then IMF (stable)
+DEFAULT_ORDER = "BCRA,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
@@ -23,6 +24,12 @@ PROVIDERS = {
     # "IMF": IMFProvider(),
     # "TE": TradingEconomicsProvider(),
 }
+
+# Extend with CPI providers
+PROVIDERS.update({
+    "INDEC": INDECProvider(),
+    "IMF_CPI": IMFProviderCPI(),
+})
 
 
 def fetch_series(

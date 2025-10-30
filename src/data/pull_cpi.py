@@ -6,7 +6,21 @@ from typing import List, Tuple
 from .db import connect, upsert_timeseries
 from .provider_router import fetch_series
 from .providers.base import ProviderError
+from src.data.provider_router import fetch_series
+from src.data.db import connect, upsert_timeseries
 
+
+def refresh_cpi() -> None:
+    conn = connect()
+    try:
+        idx = fetch_series("CPI_NATIONAL_INDEX", start="2016-12-01")
+        yoy = fetch_series("CPI_NATIONAL_YOY", start="2017-12-01")
+        mom = fetch_series("CPI_NATIONAL_MOM", start="2017-01-01")
+        upsert_timeseries(conn, "CPI_NATIONAL_INDEX", idx)
+        upsert_timeseries(conn, "CPI_NATIONAL_YOY", yoy)
+        upsert_timeseries(conn, "CPI_NATIONAL_MOM", mom)
+    finally:
+        conn.close()
 
 def pull_cpi_headline() -> List[Tuple[datetime, float]]:
     """Pull headline CPI data.

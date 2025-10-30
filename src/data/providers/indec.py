@@ -1,94 +1,95 @@
-"""INDEC (Argentine statistics agency) data provider."""
-
-import os
 import requests
 from datetime import datetime
 from typing import List, Tuple, Optional
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
 from .base import SeriesProvider, ProviderError
 
-INDEC_BASE = os.getenv("INDEC_API_BASE", "https://apis.datos.gob.ar/series/api/series")
+BASE = "https://apis.datos.gob.ar/series/api"
 
-# Example CPI series IDs (update as needed from INDEC catalog)
-INDEC_SERIES = {
-    "CPI_HEADLINE": "ipc_nivel_general_nacional",  # example name; replace with the exact id you use
-    "CPI_CORE": "ipc_nucleo_nivel_general_nacional",  # if available; else compute core later
-}
+# We will discover the National CPI (base 2016) series id dynamically using /search,
+# then fetch values via /series. We also allow transform suffixes (e.g., :percent_change_a_month_ago).
+
+CANDIDATE_QUERIES = [
+    "ipc nivel general 2016 nacional",
+    "índice de precios al consumidor nacional 2016",
+    "ipc 2016 nivel general indec",
+]
+
+# Hard-known example from docs (used only as last-resort fallback if search fails):
+DOCS_EXAMPLE_ID = "101.1_I2NG_2016_M_22"  # National CPI (Dec-2016=100) per API docs
 
 
-def _indec_url(series_id: str, start: Optional[str], end: Optional[str]) -> str:
-    # /?ids=<series_id>&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD&format=json
-    params = [f"ids={series_id}", "format=json"]
+def _search_first_id() -> Optional[str]:
+    for q in CANDIDATE_QUERIES:
+        r = requests.get(f"{BASE}/search", params={"q": q, "limit": 5}, timeout=30)
+        r.raise_for_status()
+        js = r.json()
+        items = (js.get("data") or {}).get("results") or js.get("results") or []
+        # Try to pick "nivel general", monthly, national base 2016
+        for it in items:
+            sid = it.get("id")
+            title = (it.get("title") or "").lower()
+            units = (it.get("units") or "").lower()
+            # Favor monthly National CPI base 2016, nivel general
+            if sid and "ipc" in title and "2016" in title and "nivel general" in title:
+                return sid
+    return None
+
+
+def _resolve_series_id() -> str:
+    sid = _search_first_id()
+    return sid or DOCS_EXAMPLE_ID
+
+
+def _fetch_series(series_id: str, start: Optional[str], end: Optional[str]) -> List[Tuple[datetime, float]]:
+    params = {"ids": series_id, "format": "json"}
     if start:
-        params.append(f"start_date={start}")
+        params["start_date"] = start
     if end:
-        params.append(f"end_date={end}")
-    return f"{INDEC_BASE}/?{'&'.join(params)}"
+        params["end_date"] = end
+    r = requests.get(f"{BASE}/series/", params=params, timeout=30)
+    if r.status_code == 404:
+        raise ProviderError(f"INDEC/Series 404 for {series_id}")
+    r.raise_for_status()
+    js = r.json()
+    data = (js.get("data") or js)  # API returns {data: {series:[...]}} or direct obj
+    # Standard shape: {"data":[{"dates":[...],"values":[...]}]} or {"series":[...]} depending on version.
+    # Normalize robustly:
+    rows = []
+    if isinstance(js, dict) and "series" in js:
+        series = js["series"]
+        for s in series:
+            for t, v in zip(s.get("index", []), s.get("values", [])):
+                if v is not None:
+                    rows.append((datetime.fromisoformat(str(t)), float(v)))
+    else:
+        # alternative shape (older gateway)
+        # try tabular "data" with two columns
+        if "data" in js and isinstance(js["data"], list) and len(js["data"]) and isinstance(js["data"][0], list):
+            for t, v in js["data"]:
+                if v is not None:
+                    rows.append((datetime.fromisoformat(str(t)), float(v)))
+    return sorted(rows, key=lambda x: x[0])
 
 
 class INDECProvider(SeriesProvider):
-    def __init__(self):
-        # Create session with retry strategy
-        self.session = requests.Session()
-        
-        # Retry strategy with longer backoff for slow APIs
-        retry_strategy = Retry(
-            total=3,
-            backoff_factor=2,  # Longer backoff for slow APIs
-            status_forcelist=[429, 500, 502, 503, 504],
-        )
-        
-        adapter = HTTPAdapter(max_retries=retry_strategy)
-        self.session.mount("http://", adapter)
-        self.session.mount("https://", adapter)
-
-    def fetch_timeseries(
-        self,
-        series_code: str,
-        start: Optional[str] = None,
-        end: Optional[str] = None
-    ) -> List[Tuple[datetime, float]]:
-        sid = INDEC_SERIES.get(series_code)
-        if not sid:
+    """
+    Exposes:
+      - CPI_NATIONAL_INDEX  (level, Dec2016=100)
+      - CPI_NATIONAL_YOY    (YoY pct change)
+      - CPI_NATIONAL_MOM    (MoM pct change)
+    """
+    def fetch_timeseries(self, series_code: str, start: Optional[str]=None, end: Optional[str]=None):
+        sid = _resolve_series_id()
+        transform = None
+        if series_code == "CPI_NATIONAL_INDEX":
+            pass
+        elif series_code == "CPI_NATIONAL_YOY":
+            transform = "percent_change_a_year_ago"
+        elif series_code == "CPI_NATIONAL_MOM":
+            transform = "percent_change"
+        else:
             raise ProviderError(f"INDECProvider: unknown series_code={series_code}")
-        
-        url = _indec_url(sid, start, end)
-        
-        try:
-            # Use longer timeout for slow INDEC API
-            r = self.session.get(url, timeout=120)  # 2 minutes timeout
-            if r.status_code != 200:
-                raise ProviderError(f"INDECProvider HTTP {r.status_code} for {url}")
-            
-            js = r.json()
-            # Expect: {"data":[["2025-01-01", 123.4], ...]} or {"series":[{"data":[...] }]}
-            data = None
-            if isinstance(js, dict):
-                if "data" in js:
-                    data = js["data"]
-                elif "series" in js and js["series"]:
-                    data = js["series"][0].get("data", None)
-            if not data:
-                raise ProviderError("INDECProvider: unexpected schema")
-            
-            out: List[Tuple[datetime, float]] = []
-            for row in data:
-                # row like ["2025-01-01", 123.4] or {"date": "...", "value": ...}
-                if isinstance(row, (list, tuple)) and len(row) >= 2:
-                    ts = datetime.fromisoformat(str(row[0]))
-                    out.append((ts, float(row[1])))
-                elif isinstance(row, dict):
-                    d = row.get("date")
-                    v = row.get("value")
-                    if d and v is not None:
-                        out.append((datetime.fromisoformat(str(d)), float(v)))
-            return sorted(out, key=lambda x: x[0])
-            
-        except requests.exceptions.Timeout as e:
-            raise ProviderError(f"INDECProvider timeout: {e}")
-        except requests.exceptions.RequestException as e:
-            raise ProviderError(f"INDECProvider request error: {e}")
-        except Exception as e:
-            raise ProviderError(f"INDECProvider unexpected error: {e}")
+
+        sid_full = f"{sid}:{transform}" if transform else sid
+        return _fetch_series(sid_full, start, end)
 
