@@ -209,12 +209,15 @@ try:
             if fx_gap_result.parallel_rate:
                 st.caption(f"Parallel: {fx_gap_result.parallel_rate:.1f} ({parallel_source})")
             
-            gap_pct = fx_gap_result.value * 100
-            st.metric(
-                label="Gap",
-                value=f"{gap_pct:.2f}%",
-                delta=None,
-            )
+            gap_pct = (fx_gap_result.gap * 100) if fx_gap_result.gap is not None else None
+            if gap_pct is not None:
+                st.metric(
+                    label="Gap",
+                    value=f"{gap_pct:.2f}%",
+                    delta=None,
+                )
+            else:
+                st.warning("Gap calculation unavailable")
         else:
             st.warning("No FX data")
     
@@ -264,10 +267,10 @@ try:
     st.markdown("---")
     
     # Overall state and evaluation
-    if all([fx_gap_result, reserves_mom_result, cpi_3m_ann is not None, embi_level is not None, embi_trend is not None]):
+    if all([fx_gap_result, fx_gap_result.gap is not None, reserves_mom_result, cpi_3m_ann is not None, embi_level is not None, embi_trend is not None]):
         # Prepare inputs for gate evaluation
         evaluation = evaluate_states(
-            fx_gap=fx_gap_result.value,
+            fx_gap=fx_gap_result.gap,
             reserves_mom_4w=reserves_mom_result.value,
             core_cpi_3m_ann=cpi_3m_ann,
             embi_level=embi_level,
