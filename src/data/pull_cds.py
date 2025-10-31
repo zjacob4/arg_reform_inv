@@ -41,10 +41,10 @@ def refresh_cds_arg_5y(start: Optional[str] = None, end: Optional[str] = None, m
             first_date = rows[0][0].date().isoformat()
             last_date = rows[-1][0].date().isoformat()
             if first_date == last_date:
-                print(f"  Date: {first_date}, Value: {rows[0][1]:.1f} bps")
+                print(f"  Date: {first_date}, Value: {rows[0][1]:.2f} bps")
             else:
                 print(f"  Date range: {first_date} to {last_date}")
-                print(f"  Latest value: {rows[-1][1]:.1f} bps (on {last_date})")
+                print(f"  Latest value: {rows[-1][1]:.2f} bps (on {last_date})")
         
     except WGBCDSProviderError as e:
         print(f"  ERROR: CDS fetch failed: {e}")
