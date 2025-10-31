@@ -13,13 +13,15 @@ from .providers.fred_cpi import FREDCPIProvider
 from .providers.eod_bonds import EODBondProvider
 from .providers.eod_gbond import GBondProvider
 from .providers.wgb_cds import WGBCDSProvider
+from .providers.ndf_argentina import NDFArgentinaProvider
+from .providers.bcra_policy import BCRAPolicyProvider
 from .providers.base import ProviderError
 
 # Prefer INDEC via Time Series API (official + fastest), then IMF (stable)
 # Prefer FRED for CPI (stable monthly), then INDEC, then IMF
 # EOD_BONDS for bond prices (used for EMBI calculation)
 # WGB_CDS for CDS spreads
-DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI,EOD_BONDS,GBOND,WGB_CDS"
+DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI,EOD_BONDS,GBOND,WGB_CDS,NDF,BCRA_POLICY"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
@@ -40,6 +42,8 @@ PROVIDERS.update({
     "EOD_BONDS": EODBondProvider(),
     "GBOND": GBondProvider(),
     "WGB_CDS": WGBCDSProvider(),
+    "NDF": NDFArgentinaProvider(),
+    "BCRA_POLICY": BCRAPolicyProvider(),
 })
 
 

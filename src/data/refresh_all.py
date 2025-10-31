@@ -8,6 +8,8 @@ from .pull_cpi import main as pull_cpi_main
 from .pull_embi_resilient import refresh_embi_resilient
 from .pull_embi_synthetic import refresh_embi_synth_usd
 from .pull_cds import refresh_cds_arg_5y
+from .pull_ndf import refresh_ndf_curve
+from .pull_policy_rate import refresh_policy_rate
 
 
 def main():
@@ -45,16 +47,6 @@ def main():
     except Exception as e:
         print(f"  ERROR: EMBI synthetic refresh failed: {e}")
         failed.append("EMBI Synthetic")
-        try:
-            from .journal import init_journal, log_action
-            init_journal()
-            log_action("ERROR", f"refresh_embi_synth_usd failed: {e}", {"stage": "embi_synth"})
-        except ImportError:
-            # Journal module not available, continue without logging
-            pass
-        except Exception as journal_error:
-            # Journal logging failed, but continue
-            print(f"  WARNING: Journal logging also failed: {journal_error}")
         print()
     
     # CDS refresh with journal logging
@@ -68,16 +60,32 @@ def main():
     except Exception as e:
         print(f"  ERROR: CDS refresh failed: {e}")
         failed.append("CDS")
-        try:
-            from .journal import init_journal, log_action
-            init_journal()
-            log_action("ERROR", f"CDS refresh chain failed: {e}", {"stage": "cds"})
-        except ImportError:
-            # Journal module not available, continue without logging
-            pass
-        except Exception as journal_error:
-            # Journal logging failed, but continue
-            print(f"  WARNING: Journal logging also failed: {journal_error}")
+        print()
+    
+    # NDF curve refresh
+    print("=" * 60)
+    print("NDF Curve (Argentina USD/ARS)")
+    print("=" * 60)
+    try:
+        refresh_ndf_curve(start="2024-01-01")
+        print("  NDF curve refreshed successfully")
+        print()
+    except Exception as e:
+        print(f"  ERROR: NDF curve refresh failed: {e}")
+        failed.append("NDF")
+        print()
+    
+    # Policy rate refresh
+    print("=" * 60)
+    print("Policy Rate (LELIQ & Real Rate)")
+    print("=" * 60)
+    try:
+        refresh_policy_rate(start="2023-01-01")  # 2+ years backfill
+        print("  Policy rate refreshed successfully")
+        print()
+    except Exception as e:
+        print(f"  ERROR: Policy rate refresh failed: {e}")
+        failed.append("Policy Rate")
         print()
     
     print("=" * 60)

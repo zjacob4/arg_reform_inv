@@ -138,6 +138,57 @@ REGISTRY: Dict[str, SeriesSpec] = {
         source="MECON",
         units="ARS billions",
     ),
+    # NDF (Non-Deliverable Forward) curve series
+    "NDF_1M": SeriesSpec(
+        name="NDF_1M",
+        code="NDF_1M",
+        freq="D",
+        source="SYNTHETIC",
+        units="ARS per USD (1M forward)",
+    ),
+    "NDF_3M": SeriesSpec(
+        name="NDF_3M",
+        code="NDF_3M",
+        freq="D",
+        source="SYNTHETIC",
+        units="ARS per USD (3M forward)",
+    ),
+    "NDF_6M": SeriesSpec(
+        name="NDF_6M",
+        code="NDF_6M",
+        freq="D",
+        source="SYNTHETIC",
+        units="ARS per USD (6M forward)",
+    ),
+    "NDF_12M": SeriesSpec(
+        name="NDF_12M",
+        code="NDF_12M",
+        freq="D",
+        source="SYNTHETIC",
+        units="ARS per USD (12M forward)",
+    ),
+    # Policy rates
+    "LELIQ_RATE": SeriesSpec(
+        name="LELIQ_RATE",
+        code="LELIQ_RATE",
+        freq="D",
+        source="BCRA",
+        units="Annualized percentage",
+    ),
+    "POLICY_RATE": SeriesSpec(
+        name="POLICY_RATE",
+        code="POLICY_RATE",
+        freq="D",
+        source="BCRA_LELIQ",
+        units="Annualized percentage",
+    ),
+    "REAL_RATE": SeriesSpec(
+        name="REAL_RATE",
+        code="REAL_RATE",
+        freq="D",
+        source="DERIVED",
+        units="Annualized percentage (policy_rate - cpi_nowcast)",
+    ),
 }
 
 

@@ -1,4 +1,4 @@
-.PHONY: install run test refresh refresh-embi initdb watch
+.PHONY: install run test refresh refresh-embi refresh-embi-synth refresh-cds refresh-ndf refresh-policy initdb watch
 
 # Install project dependencies
 install:
@@ -29,6 +29,13 @@ refresh-cds:
 	python -c "from src.data.pull_cds import refresh_cds_arg_5y; print(refresh_cds_arg_5y(mode='latest'))"
 # Expect: 1  (and a journal INFO entry)
 
+# Refresh NDF curve data
+refresh-ndf:
+	python -c "from src.data.pull_ndf import refresh_ndf_curve; print(refresh_ndf_curve(start='2024-01-01'))"
+
+# Refresh policy rate data
+refresh-policy:
+	python -c "from src.data.pull_policy_rate import refresh_policy_rate; print(refresh_policy_rate(start='2023-01-01'))"
 
 # Initialize database schema and load series registry
 initdb:
