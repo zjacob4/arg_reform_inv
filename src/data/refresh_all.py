@@ -5,7 +5,7 @@ import sys
 from .pull_fx import main as pull_fx_main
 from .pull_reserves import main as pull_reserves_main
 from .pull_cpi import main as pull_cpi_main
-from .pull_embi_cds import main as pull_embi_cds_main
+from .pull_embi_resilient import refresh_embi_resilient
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
         ("FX (USD/ARS)", pull_fx_main),
         ("Reserves", pull_reserves_main),
         ("CPI", pull_cpi_main),
-        ("EMBI/CDS", pull_embi_cds_main),
+        ("EMBI (Resilient)", lambda: refresh_embi_resilient(start="2024-01-01", min_bonds=2)),
     ]
     
     failed = []

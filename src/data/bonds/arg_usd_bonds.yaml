@@ -1,0 +1,32 @@
+# Update coupons/maturities/weights to your preference
+- ticker: GD30
+  isin: XS2202881995
+  coupon: 0.55
+  freq: 2
+  maturity: 2030-07-09
+  day_count: 30E/360
+  weight: 0.40
+
+- ticker: AL30
+  isin: US040114HS25
+  coupon: 1.00
+  freq: 2
+  maturity: 2030-12-31
+  day_count: 30E/360
+  weight: 0.30
+
+- ticker: GD35
+  isin: XS2202882290
+  coupon: 0.62
+  freq: 2
+  maturity: 2035-07-09
+  day_count: 30E/360
+  weight: 0.15
+
+- ticker: AL35
+  isin: US040114HT08
+  coupon: 1.25
+  freq: 2
+  maturity: 2035-12-31
+  day_count: 30E/360
+  weight: 0.15

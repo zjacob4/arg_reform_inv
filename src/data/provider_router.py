@@ -10,11 +10,13 @@ from .providers.yahoo_fx import YahooFXProvider
 from .providers.bluelytics import BluelyticsProvider
 from .providers.imf_cpi import IMFProviderCPI
 from .providers.fred_cpi import FREDCPIProvider
+from .providers.eod_bonds import EODBondProvider
 from .providers.base import ProviderError
 
 # Prefer INDEC via Time Series API (official + fastest), then IMF (stable)
 # Prefer FRED for CPI (stable monthly), then INDEC, then IMF
-DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI"
+# EOD_BONDS for bond prices (used for EMBI calculation)
+DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI,EOD_BONDS"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
@@ -32,6 +34,7 @@ PROVIDERS.update({
     "FRED_CPI": FREDCPIProvider(),
     "INDEC": INDECProvider(),
     "IMF_CPI": IMFProviderCPI(),
+    "EOD_BONDS": EODBondProvider(),
 })
 
 

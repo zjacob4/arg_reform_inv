@@ -21,6 +21,7 @@ dependencies = [
     "schedule>=1.2.0",
     "yfinance==0.2.44",
     "sdmx1>=2.22.0",
+    "pyyaml>=6.0.0",
 ]
 
 [project.optional-dependencies]

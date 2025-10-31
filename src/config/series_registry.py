@@ -74,11 +74,40 @@ REGISTRY: Dict[str, SeriesSpec] = {
         source="FRED",
         units="Percent",
     ),
-    "EMBI_AR": SeriesSpec(
-        name="EMBI_AR",
-        code="EMBI_AR",
+    "EMBI_ARG_LOCAL": SeriesSpec(
+        name="EMBI_ARG_LOCAL",
+        code="EMBI_ARG_LOCAL",
         freq="D",
-        source="Bloomberg",
+        source="LOCAL",
+        units="Basis points",
+    ),
+    # Individual bond spreads (computed from local bond quotes)
+    "EMBI_ARG_LOCAL__GD30_SPREAD_BPS": SeriesSpec(
+        name="EMBI_ARG_LOCAL__GD30_SPREAD_BPS",
+        code="EMBI_ARG_LOCAL__GD30_SPREAD_BPS",
+        freq="D",
+        source="LOCAL",
+        units="Basis points",
+    ),
+    "EMBI_ARG_LOCAL__AL30_SPREAD_BPS": SeriesSpec(
+        name="EMBI_ARG_LOCAL__AL30_SPREAD_BPS",
+        code="EMBI_ARG_LOCAL__AL30_SPREAD_BPS",
+        freq="D",
+        source="LOCAL",
+        units="Basis points",
+    ),
+    "EMBI_ARG_LOCAL__GD35_SPREAD_BPS": SeriesSpec(
+        name="EMBI_ARG_LOCAL__GD35_SPREAD_BPS",
+        code="EMBI_ARG_LOCAL__GD35_SPREAD_BPS",
+        freq="D",
+        source="LOCAL",
+        units="Basis points",
+    ),
+    "EMBI_ARG_LOCAL__AL35_SPREAD_BPS": SeriesSpec(
+        name="EMBI_ARG_LOCAL__AL35_SPREAD_BPS",
+        code="EMBI_ARG_LOCAL__AL35_SPREAD_BPS",
+        freq="D",
+        source="LOCAL",
         units="Basis points",
     ),
     "CDS_5Y": SeriesSpec(
