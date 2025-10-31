@@ -1,4 +1,4 @@
-.PHONY: install run test refresh initdb watch
+.PHONY: install run test refresh refresh-embi initdb watch
 
 # Install project dependencies
 install:
@@ -15,6 +15,14 @@ test:
 # Refresh data from all sources
 refresh:
 	python -m src.data.refresh_all
+
+# Refresh only EMBI data
+refresh-embi:
+	python -c "from src.data.pull_embi_resilient import refresh_embi_resilient; refresh_embi_resilient(start='2024-01-01', min_bonds=2)"
+
+# Refresh EMBI synthetic data
+refresh-embi-synth:
+	python -c "from src.data.pull_embi_synthetic import refresh_embi_synth_usd; refresh_embi_synth_usd(start='2024-01-01')"
 
 # Initialize database schema and load series registry
 initdb:

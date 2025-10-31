@@ -1,13 +1,8 @@
 import os, requests
-import yaml
-import pathlib
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional
-
-from dotenv import load_dotenv
-from src.quality.embi_checks import price_sanity, daily_jump_ok
 from .base import SeriesProvider, ProviderError
-
+from dotenv import load_dotenv
 load_dotenv()
 
 EOD_BASE = os.getenv("EODHD_BASE", "https://eodhd.com/api")
@@ -15,91 +10,46 @@ EOD_TOKEN = os.getenv("EODHD_API_TOKEN", "")
 
 class EODBondError(RuntimeError): ...
 
-def _eod(url: str, params: dict) -> dict:
+def _eod(url: str, params: dict) -> list:
     params = {**params, "api_token": EOD_TOKEN, "fmt": "json"}
     r = requests.get(url, params=params, timeout=30)
     if r.status_code != 200:
-        raise EODBondError(f"EOD HTTP {r.status_code}: {r.text[:240]}")
-    return r.json()
+        hint = ""
+        if r.status_code == 403:
+            hint = " (403 Forbidden: ensure EUBOND pricing is enabled for your key)"
+        raise EODBondError(f"EOD HTTP {r.status_code}: {r.text[:200]}{hint}")
+    js = r.json()
+    if not isinstance(js, list):
+        return []
+    return js
 
-def fetch_bond_eod_by_isin(isin: str, start: Optional[str]=None, end: Optional[str]=None) -> List[Tuple[datetime, float]]:
+def fetch_eubond_eod(code: str, start: Optional[str] = None, end: Optional[str] = None) -> List[Tuple[datetime, float, Optional[float]]]:
     """
-    Returns list of (date, clean_price) for the bond identified by ISIN.
-    Uses EODHD /api/eod-bond/{ISIN} endpoint (EOD close).
+    Returns [(ts, close_px, yield_or_none)] for vendor Code on EUBOND.
     """
     if not EOD_TOKEN:
         raise EODBondError("Missing EODHD_API_TOKEN")
-    url = f"{EOD_BASE}/eod-bond/{isin}"
+    url = f"{EOD_BASE}/eod/{code}.EUBOND"
     params = {}
     if start: params["from"] = start
     if end:   params["to"]   = end
     js = _eod(url, params)
-    rows: List[Tuple[datetime, float]] = []
-    # Expect array of {date:"YYYY-MM-DD", close: <price>, ...}
-    if isinstance(js, list):
-        for it in js:
-            d = it.get("date")
-            px = it.get("close")
-            if d and px is not None:
-                rows.append((datetime.fromisoformat(d), float(px)))
-    elif isinstance(js, dict) and "eod" in js:
-        for it in js["eod"]:
-            d = it.get("date")
-            px = it.get("close")
-            if d and px is not None:
-                rows.append((datetime.fromisoformat(d), float(px)))
-    rows.sort(key=lambda x: x[0])
-    
-    # Apply quality filters
-    filtered = []
-    prev = None
-    for (ts, px) in rows:
-        if not price_sanity(px):
-            continue
-        if not daily_jump_ok(prev, px):
-            continue
-        filtered.append((ts, px))
-        prev = px
-    rows = filtered
-    
-    return rows
-
-def fetch_quotes_for_universe(bonds_meta: List[dict], start: Optional[str]=None, end: Optional[str]=None) -> Dict[str, List[Tuple[datetime, float]]]:
-    data: Dict[str, List[Tuple[datetime, float]]] = {}
-    for b in bonds_meta:
-        isin = b.get("isin")
-        tkr  = (b.get("ticker") or isin).upper()
-        if not isin:
-            continue
-        try:
-            rows = fetch_bond_eod_by_isin(isin, start=start, end=end)
-            if rows:
-                data[tkr] = rows
-        except Exception as e:
-            # skip silently; caller can decide how strict to be
-            continue
-    return data
+    out=[]
+    for it in js:
+        d = it.get("date")
+        px = it.get("close") or it.get("adjusted_close") or it.get("price")
+        y  = it.get("yield") or it.get("Yield")  # some feeds use 'Yield'
+        if d and px is not None:
+            out.append((datetime.fromisoformat(d), float(px), float(y) if y not in (None,"") else None))
+    return out
 
 
 class EODBondProvider(SeriesProvider):
-    """EODHD bond price provider for Argentine USD bonds.
+    """EODHD bond price provider using EUBOND endpoint.
     
-    Supports series codes like BOND_PRICE_{TICKER} (e.g., BOND_PRICE_GD30).
-    Maps tickers to ISINs via arg_usd_bonds.yaml.
+    Supports series codes that map to EUBOND vendor codes.
+    Series codes should be in format: BOND_EUBOND_{CODE} or just EUBOND codes.
     """
-    
-    def __init__(self, bonds_yaml_path: str = "src/data/bonds/arg_usd_bonds.yaml"):
-        self.bonds_yaml_path = bonds_yaml_path
-        self._ticker_to_isin = self._load_ticker_map()
-    
-    def _load_ticker_map(self) -> Dict[str, str]:
-        """Load ticker -> ISIN mapping from YAML."""
-        try:
-            with open(pathlib.Path(self.bonds_yaml_path), "r") as f:
-                bonds = yaml.safe_load(f)
-            return {b["ticker"].upper(): b["isin"] for b in bonds if "ticker" in b and "isin" in b}
-        except Exception as e:
-            return {}
     
     def fetch_timeseries(
         self,
@@ -110,24 +60,24 @@ class EODBondProvider(SeriesProvider):
         """Fetch bond price time series.
         
         Args:
-            series_code: Must be "BOND_PRICE_{TICKER}" format (e.g., "BOND_PRICE_GD30")
+            series_code: EUBOND vendor code (e.g., "ARG713" for GD30) 
+                         or "BOND_EUBOND_{CODE}" format
             start: Start date in YYYY-MM-DD format
             end: End date in YYYY-MM-DD format
             
         Returns:
             List of (datetime, price) tuples
         """
-        if not series_code.startswith("BOND_PRICE_"):
-            raise ProviderError(f"EODBondProvider: series_code must start with 'BOND_PRICE_' (got {series_code})")
-        
-        ticker = series_code.replace("BOND_PRICE_", "").upper()
-        isin = self._ticker_to_isin.get(ticker)
-        
-        if not isin:
-            raise ProviderError(f"EODBondProvider: unknown ticker {ticker} (not found in {self.bonds_yaml_path})")
+        # Remove prefix if present
+        if series_code.startswith("BOND_EUBOND_"):
+            code = series_code.replace("BOND_EUBOND_", "")
+        else:
+            code = series_code
         
         try:
-            return fetch_bond_eod_by_isin(isin, start=start, end=end)
+            # fetch_eubond_eod returns (ts, price, yield) tuples, we just need price
+            rows_with_yield = fetch_eubond_eod(code, start=start, end=end)
+            # Extract just (datetime, price) pairs
+            return [(ts, price) for ts, price, _ in rows_with_yield]
         except EODBondError as e:
             raise ProviderError(f"EODBondProvider: {e}")
-

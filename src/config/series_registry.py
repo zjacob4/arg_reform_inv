@@ -81,6 +81,13 @@ REGISTRY: Dict[str, SeriesSpec] = {
         source="LOCAL",
         units="Basis points",
     ),
+    "EMBI_ARG_SYNTH_USD": SeriesSpec(
+        name="EMBI_ARG_SYNTH_USD",
+        code="EMBI_ARG_SYNTH_USD",
+        freq="D",
+        source="LOCAL",
+        units="Basis points",
+    ),
     # Individual bond spreads (computed from local bond quotes)
     "EMBI_ARG_LOCAL__GD30_SPREAD_BPS": SeriesSpec(
         name="EMBI_ARG_LOCAL__GD30_SPREAD_BPS",

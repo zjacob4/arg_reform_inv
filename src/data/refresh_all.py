@@ -6,6 +6,7 @@ from .pull_fx import main as pull_fx_main
 from .pull_reserves import main as pull_reserves_main
 from .pull_cpi import main as pull_cpi_main
 from .pull_embi_resilient import refresh_embi_resilient
+from .pull_embi_synthetic import refresh_embi_synth_usd
 
 
 def main():
@@ -31,6 +32,29 @@ def main():
             print(f"  ERROR: {name} failed: {e}")
             failed.append(name)
             print()
+    
+    # EMBI synthetic refresh with journal logging
+    print("=" * 60)
+    print("EMBI Synthetic (USD)")
+    print("=" * 60)
+    try:
+        refresh_embi_synth_usd(start="2024-01-01")
+        print("  EMBI synthetic refreshed successfully")
+        print()
+    except Exception as e:
+        print(f"  ERROR: EMBI synthetic refresh failed: {e}")
+        failed.append("EMBI Synthetic")
+        try:
+            from .journal import init_journal, log_action
+            init_journal()
+            log_action("ERROR", f"refresh_embi_synth_usd failed: {e}", {"stage": "embi_synth"})
+        except ImportError:
+            # Journal module not available, continue without logging
+            pass
+        except Exception as journal_error:
+            # Journal logging failed, but continue
+            print(f"  WARNING: Journal logging also failed: {journal_error}")
+        print()
     
     print("=" * 60)
     if failed:
