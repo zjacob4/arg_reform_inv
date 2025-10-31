@@ -7,6 +7,7 @@ from .pull_reserves import main as pull_reserves_main
 from .pull_cpi import main as pull_cpi_main
 from .pull_embi_resilient import refresh_embi_resilient
 from .pull_embi_synthetic import refresh_embi_synth_usd
+from .pull_cds import refresh_cds_arg_5y
 
 
 def main():
@@ -48,6 +49,29 @@ def main():
             from .journal import init_journal, log_action
             init_journal()
             log_action("ERROR", f"refresh_embi_synth_usd failed: {e}", {"stage": "embi_synth"})
+        except ImportError:
+            # Journal module not available, continue without logging
+            pass
+        except Exception as journal_error:
+            # Journal logging failed, but continue
+            print(f"  WARNING: Journal logging also failed: {journal_error}")
+        print()
+    
+    # CDS refresh with journal logging
+    print("=" * 60)
+    print("CDS (Argentina 5Y USD)")
+    print("=" * 60)
+    try:
+        refresh_cds_arg_5y(mode="latest")
+        print("  CDS refreshed successfully")
+        print()
+    except Exception as e:
+        print(f"  ERROR: CDS refresh failed: {e}")
+        failed.append("CDS")
+        try:
+            from .journal import init_journal, log_action
+            init_journal()
+            log_action("ERROR", f"CDS refresh chain failed: {e}", {"stage": "cds"})
         except ImportError:
             # Journal module not available, continue without logging
             pass

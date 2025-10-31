@@ -24,6 +24,12 @@ refresh-embi:
 refresh-embi-synth:
 	python -c "from src.data.pull_embi_synthetic import refresh_embi_synth_usd; refresh_embi_synth_usd(start='2024-01-01')"
 
+# Refresh CDS data
+refresh-cds:
+	python -c "from src.data.pull_cds import refresh_cds_arg_5y; print(refresh_cds_arg_5y(mode='latest'))"
+# Expect: 1  (and a journal INFO entry)
+
+
 # Initialize database schema and load series registry
 initdb:
 	python -m src.data.init_db

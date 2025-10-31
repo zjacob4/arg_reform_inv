@@ -12,12 +12,14 @@ from .providers.imf_cpi import IMFProviderCPI
 from .providers.fred_cpi import FREDCPIProvider
 from .providers.eod_bonds import EODBondProvider
 from .providers.eod_gbond import GBondProvider
+from .providers.wgb_cds import WGBCDSProvider
 from .providers.base import ProviderError
 
 # Prefer INDEC via Time Series API (official + fastest), then IMF (stable)
 # Prefer FRED for CPI (stable monthly), then INDEC, then IMF
 # EOD_BONDS for bond prices (used for EMBI calculation)
-DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI,EOD_BONDS,GBOND"
+# WGB_CDS for CDS spreads
+DEFAULT_ORDER = "BCRA,FRED_CPI,INDEC,BLUELYTICS,YAHOOFX,IMF_CPI,EOD_BONDS,GBOND,WGB_CDS"
 
 # Provider registry - prefer local official sources first
 PROVIDERS = {
@@ -30,13 +32,14 @@ PROVIDERS = {
     # "TE": TradingEconomicsProvider(),
 }
 
-# Extend with CPI providers
+# Extend with CPI providers and other providers
 PROVIDERS.update({
     "FRED_CPI": FREDCPIProvider(),
     "INDEC": INDECProvider(),
     "IMF_CPI": IMFProviderCPI(),
     "EOD_BONDS": EODBondProvider(),
     "GBOND": GBondProvider(),
+    "WGB_CDS": WGBCDSProvider(),
 })
 
 

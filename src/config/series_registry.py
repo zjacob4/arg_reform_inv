@@ -124,6 +124,13 @@ REGISTRY: Dict[str, SeriesSpec] = {
         source="Bloomberg",
         units="Basis points",
     ),
+    "CDS_ARG_5Y_USD": SeriesSpec(
+        name="CDS_ARG_5Y_USD",
+        code="CDS_ARG_5Y_USD",
+        freq="D",
+        source="WGB",
+        units="Basis points",
+    ),
     "PRIMARY_BALANCE": SeriesSpec(
         name="PRIMARY_BALANCE",
         code="PRIMARY_BALANCE",
